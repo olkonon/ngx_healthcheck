@@ -1,0 +1,19 @@
+name: Build
+run-name: ${{ github.actor }}
+on: [push]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          sparse-checkout: 'build/modules/ngx_healthcheck/'
+          sparse-checkout-cone-mode: false
+      - name: Install environment
+        run: 'sudo apt install -y libpcre2-dev zlib1g-dev wget'
+      - name: Build
+        run: './build.sh'
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+      - run: echo "This job's status is ${{ job.status }}."
