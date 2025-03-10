@@ -1,3 +1,7 @@
+Build status
+======
+[![Build Status](https://github.com/olkonon/ngx_healthcheck/actions/workflows/build.yml/badge.svg)](https://github.com/olkonon/ngx_healthcheck/actions/workflows/build.yml)
+
 Name
 ====
 
@@ -14,10 +18,6 @@ Module requires [zone](https://nginx.org/en/docs/http/ngx_http_upstream_module.h
 * disabling hosts
 
 This module supports http and stream upstream types.
-
-Build status
-======
-[![Build Status](https://travis-ci.org/ZigzagAK/ngx_dynamic_healthcheck.svg?branch=master)](https://travis-ci.org/ZigzagAK/ngx_dynamic_healthcheck)
 
 Table of Contents
 =================
