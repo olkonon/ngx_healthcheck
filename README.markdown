@@ -8,7 +8,6 @@ Module requires [zone](https://nginx.org/en/docs/http/ngx_http_upstream_module.h
 * support http, tcp, ssl checks.
 * support dynamic reconfiguration
 * support persistance of healthcheck parameters
-* optionally support LUA API for reconfiguration
 * with [dynamic-upstream-module](https://github.com/ZigzagAK/ngx_dynamic_upstream) automaticaly cover by healthchecks new added peers (with DNS balancing).
 * TCP checks with requrest/response (for Redis for example)
 * pattern matching
@@ -52,12 +51,6 @@ Table of Contents
         - [get](#healthcheck_get)
         - [status](#healthcheck_status)
         - [update](#healthcheck_update)
-* [LUA API](#lua)
-    * [get](#lua_get)
-    * [update](#lua_update)
-    * [disable](#lua_disable)
-    * [disable_host](#lua_disable_host)
-    * [status](#lua_status)
 
 Status
 ====
@@ -570,91 +563,3 @@ Arguments:
 **enable/disable host** may be used with upstream or not. When no upstream is defined peers disabling/enabling in all upstreams.  
 
 [Back to TOC](#table-of-contents)
-
-LUA API
-=====
-
-Package `ngx.healthcheck` is used for manipulation http upstreams.
-Package `ngx.healthcheck.stream` is used for manipulation stream upstreams.
-
-Functionality of both packages is same.
-
-
-Methods
-=======
-
-lua_get
-------
-**syntax 1:** `healthcheck, error = hc.get(upstream)`  
-**syntax 2:** `healthcheck, error = hc.get()`  
-**context:** *&#42;_by_lua&#42;*  
-
-Get healthcheck parameters.
-
-Returns lua table on success, or error otherwise.
-
-[Back to TOC](#table-of-contents)
-
-lua_update
----------
-**syntax:** `ok, error = hc.update(upstream, tab)`  
-**context:** *&#42;_by_lua&#42;*  
-
-Update healthcheck parameters.
-
-Example table:
-```
-{
-    "rise":1,
-    "fall":2,
-    "interval":10,
-    "keepalive":10,
-    "timeout":10000,
-    "type":"http",
-    "command":{
-        "uri":"/health",
-        "method":"GET",
-        "headers":{"a":"1","b":"2"},
-        "body":"ping",
-        "expected":{
-            "body":"1111",
-            "codes":[200,204,201]
-        }
-    },
-    "disabled":0,
-    "off":0
-}
-```
-
-[Back to TOC](#table-of-contents).
-
-lua_disable_host
--------------
-**syntax:** `ok, error = hc.disable_host(host, disabled=1|0, [upstream])`  
-**context:** *&#42;_by_lua&#42;*  
-
-Disable (permanent down) specific host in upstream (or in all upstreams).
-
-Returns `true` or throws the error.
-
-[Back to TOC](#table-of-contents).
-
-lua_disable
----------
-**syntax:** `ok, error = hc.disable(upstream, disabled=1|0)`  
-**context:** *&#42;_by_lua&#42;*  
-
-Disable (permanent down) all hosts in upstream.
-
-Returns `true` or throws the error.
-
-[Back to TOC](#table-of-contents).
-
-lua_status
----------
-**syntax:** `status, error = hc.status(upstream)`  
-**context:** *&#42;_by_lua&#42;*  
-
-Returns runlime healthcheck information about peers in upstream.
-
-[Back to TOC](#table-of-contents).

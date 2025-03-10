@@ -436,24 +436,3 @@ ngx_shm_create_zone(ngx_conf_t *cf, ngx_dynamic_healthcheck_conf_t *conf,
 
     return zone;
 }
-
-#ifdef _WITH_LUA_API
-
-ngx_int_t
-lua_get_shm_string(lua_State *L, ngx_str_t *str,
-    ngx_slab_pool_t *slab, int index)
-{
-    const char *s = lua_tostring(L, index);
-    ngx_str_null(str);
-    if (s != NULL) {
-        str->len = strlen(s);
-        str->data = ngx_slab_calloc_locked(slab, str->len + 1);
-        if (str->data != NULL)
-            ngx_memcpy(str->data, s, str->len);
-        else
-            str->len = 0;
-    }
-    return str->data != NULL ? NGX_OK : NGX_ERROR;
-}
-
-#endif
