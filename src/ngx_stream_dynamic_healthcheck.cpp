@@ -6,15 +6,6 @@ extern "C" {
 #include <ngx_stream.h>
 }
 
-#ifdef _WITH_LUA_API
-extern "C" {
-#include <lauxlib.h>
-#include <lua.h>
-#include "ngx_stream_lua_request.h"
-#include "ngx_stream_lua_api.h"
-}
-#endif
-
 #include "ngx_dynamic_healthcheck.h"
 #include "ngx_dynamic_shm.h"
 #include "ngx_dynamic_healthcheck_config.h"
@@ -133,15 +124,6 @@ static ngx_command_t ngx_stream_dynamic_healthcheck_commands[] = {
 
 };
 
-
-#ifdef _WITH_LUA_API
-static ngx_int_t
-ngx_stream_dynamic_healthcheck_post_conf(ngx_conf_t *cf);
-#else
-#define ngx_stream_dynamic_healthcheck_post_conf NULL
-#endif
-
-
 static char *
 ngx_stream_dynamic_healthcheck_init_main_conf(ngx_conf_t *cf, void *conf);
 
@@ -180,55 +162,6 @@ ngx_str_t NGX_DH_MODULE_STREAM = ngx_string("stream");
 
 
 // initialization
-
-#ifdef _WITH_LUA_API
-
-int
-ngx_stream_dynamic_healthcheck_create_module(lua_State *L)
-{
-    lua_createtable(L, 0, 5);
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_stream_upstream_main_conf_t,
-         ngx_stream_upstream_srv_conf_t>::lua_get, 0);
-    lua_setfield(L, -2, "get");
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_stream_upstream_main_conf_t,
-         ngx_stream_upstream_srv_conf_t>::lua_update, 0);
-    lua_setfield(L, -2, "update");
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_stream_upstream_main_conf_t,
-         ngx_stream_upstream_srv_conf_t>::lua_disable_host, 0);
-    lua_setfield(L, -2, "disable_host");
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_stream_upstream_main_conf_t,
-         ngx_stream_upstream_srv_conf_t>::lua_disable, 0);
-    lua_setfield(L, -2, "disable");
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_stream_upstream_main_conf_t,
-         ngx_stream_upstream_srv_conf_t>::lua_status, 0);
-    lua_setfield(L, -2, "status");
-
-    return 1;
-}
-
-
-static ngx_int_t
-ngx_stream_dynamic_healthcheck_post_conf(ngx_conf_t *cf)
-{
-    if (ngx_stream_lua_add_package_preload(cf, "ngx.healthcheck",
-        ngx_stream_dynamic_healthcheck_create_module) != NGX_OK)
-        return NGX_ERROR;
-
-    return NGX_OK;
-}
-
-#endif
-
 static void *
 ngx_stream_dynamic_healthcheck_create_conf(ngx_conf_t *cf)
 {

@@ -1,15 +1,6 @@
 /*
  * Copyright (C) 2018 Aleksei Konovkin (alkon2000@mail.ru)
  */
-
-#ifdef _WITH_LUA_API
-extern "C" {
-#include <lauxlib.h>
-#include <lua.h>
-#include "ngx_http_lua_api.h"
-}
-#endif
-
 #include "ngx_dynamic_healthcheck.h"
 #include "ngx_dynamic_shm.h"
 #include "ngx_dynamic_healthcheck_config.h"
@@ -230,49 +221,6 @@ ngx_str_t NGX_DH_MODULE_HTTP = ngx_string("http");
 
 
 // initialization
-
-#ifdef _WITH_LUA_API
-
-static int
-ngx_http_dynamic_healthcheck_create_module(lua_State *L)
-{
-    lua_createtable(L, 0, 5);
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_http_upstream_main_conf_t,
-         ngx_http_upstream_srv_conf_t>::lua_get, 0);
-    lua_setfield(L, -2, "get");
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_http_upstream_main_conf_t,
-         ngx_http_upstream_srv_conf_t>::lua_update, 0);
-    lua_setfield(L, -2, "update");
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_http_upstream_main_conf_t,
-         ngx_http_upstream_srv_conf_t>::lua_disable_host, 0);
-    lua_setfield(L, -2, "disable_host");
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_http_upstream_main_conf_t,
-         ngx_http_upstream_srv_conf_t>::lua_disable, 0);
-    lua_setfield(L, -2, "disable");
-
-    lua_pushcclosure(L, &ngx_dynamic_healthcheck_api
-        <ngx_http_upstream_main_conf_t,
-         ngx_http_upstream_srv_conf_t>::lua_status, 0);
-    lua_setfield(L, -2, "status");
-
-    return 1;
-}
-
-
-extern int
-ngx_stream_dynamic_healthcheck_create_module(lua_State *L);
-
-#endif
-
-
 static ngx_int_t
 ngx_http_dynamic_healthcheck_touch(ngx_http_request_t *r)
 {
@@ -311,18 +259,6 @@ ngx_http_dynamic_healthcheck_post_conf(ngx_conf_t *cf)
 {
     ngx_http_core_main_conf_t   *mcf;
     ngx_http_handler_pt         *handler;
-
-#ifdef _WITH_LUA_API
-
-    if (ngx_http_lua_add_package_preload(cf, "ngx.healthcheck",
-        ngx_http_dynamic_healthcheck_create_module) != NGX_OK)
-        return NGX_ERROR;
-
-    if (ngx_http_lua_add_package_preload(cf, "ngx.healthcheck.stream",
-        ngx_stream_dynamic_healthcheck_create_module) != NGX_OK)
-        return NGX_ERROR;
-
-#endif
 
     mcf = (ngx_http_core_main_conf_t *)
         ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);

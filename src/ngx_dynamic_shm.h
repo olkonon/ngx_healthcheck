@@ -11,10 +11,6 @@ extern "C" {
 
 #include <ngx_core.h>
 
-#ifdef _WITH_LUA_API
-#include <lauxlib.h>
-#endif
-
 #ifdef __cplusplus
 }
 #endif
@@ -67,14 +63,6 @@ ngx_shm_keyval_array_create(ngx_keyval_array_t *src, ngx_uint_t size,
 ngx_shm_zone_t *
 ngx_shm_create_zone(ngx_conf_t *cf, ngx_dynamic_healthcheck_conf_t *conf,
     void *tag);
-
-#ifdef _WITH_LUA_API
-
-ngx_int_t
-lua_get_shm_string(lua_State *L, ngx_str_t *str,
-    ngx_slab_pool_t *slab, int index);
-
-#endif
 
 #ifdef __cplusplus
 }

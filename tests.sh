@@ -12,7 +12,6 @@ folder="$(ls -1 $DIR/install/tmp | grep nginx)"
 
 export PATH=$DIR/install/tmp/$folder/sbin:$PATH
 export LD_LIBRARY_PATH=$DIR/install/tmp/$folder/lib
-export LUA_CPATH="$DIR/install/tmp/$folder/lib/lua/5.1/?.so"
 
 ret=0
 

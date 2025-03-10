@@ -4,4 +4,4 @@ compiler:
   - gcc
 
 script:
-  - ./build_with_lua.sh
+  - ./build.sh

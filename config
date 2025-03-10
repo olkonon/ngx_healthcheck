@@ -2,6 +2,8 @@ ngx_addon_name="                          \
     ngx_http_dynamic_healthcheck_module   \
     ngx_stream_dynamic_healthcheck_module \
 "
+have=NGX_HTTP_DYNAMIC_HEALTHCHEK . auto/have
+
 
 HTTP_DYNAMIC_HC_SRCS="                                    \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck.cpp        \
@@ -16,6 +18,7 @@ HTTP_DYNAMIC_HC_SRCS="                                    \
 "
 
 HTTP_DYNAMIC_HC_DEPS="                                      \
+    $ngx_addon_dir/src/ngx_http_dynamic_healthcheck.h       \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck.h            \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_state.h      \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_peer.h       \
@@ -31,8 +34,8 @@ stream_lua_nginx_module_incs="$(echo $CORE_INCS | awk '{
     match($0, /([^ ]*\/stream-lua-nginx-module\/src)/, arr)
     print arr[1]
 }')"
-CORE_INCS="$CORE_INCS $stream_lua_nginx_module_incs"
 
+CORE_INCS="$CORE_INCS $stream_lua_nginx_module_incs $ngx_addon_dir/src/"
 
 if test -n "$ngx_module_link"; then
     ngx_module_type=HTTP
