@@ -1392,6 +1392,103 @@ ngx_http_dynamic_healthcheck_status_handler(ngx_http_request_t *r)
     return ngx_http_output_filter(r, out);
 }
 
+ngx_int_t
+ngx_http_dynamic_healthcheck_upstream_status_handler(ngx_http_request_t *r)
+{
+    static ngx_str_t            json = ngx_string("application/json");
+    ngx_chain_t                *out = NULL, *tmp;
+    ngx_int_t                   rc;
+    ngx_http_variable_value_t   upstream;
+    off_t                       content_length = 0;
+
+    if (r->method != NGX_HTTP_GET)
+        return NGX_HTTP_NOT_ALLOWED;
+
+    if ((rc = ngx_http_discard_request_body(r)) != NGX_OK)
+        return rc;
+
+    upstream.not_found = 1;
+
+    out = ngx_http_dynamic_healthcheck_status
+            <ngx_http_upstream_main_conf_t,
+             ngx_http_upstream_srv_conf_t,
+             ngx_http_upstream_rr_peers_t,
+             ngx_http_upstream_rr_peer_t> (r, &upstream);
+
+    if (out == NULL)
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+
+    for (tmp = out; tmp; tmp = tmp->next)
+        content_length += (tmp->buf->last - tmp->buf->start);
+
+    if (content_length != 0) {
+        r->headers_out.status = NGX_HTTP_OK;
+        r->headers_out.content_type = json;
+        r->headers_out.content_length_n = content_length;
+    } else {
+        r->headers_out.status = NGX_HTTP_NOT_FOUND;
+        out->buf->last = ngx_snprintf(out->buf->last,
+                                      out->buf->end - out->buf->last,
+                                      "not found");
+        r->headers_out.content_length_n = 9;
+    }
+
+    rc = ngx_http_send_header(r);
+
+    if (rc == NGX_ERROR || rc > NGX_OK)
+        return rc;
+
+    return ngx_http_output_filter(r, out);
+}
+
+ngx_int_t
+ngx_http_dynamic_healthcheck_stream_status_handler(ngx_http_request_t *r)
+{
+    static ngx_str_t            json = ngx_string("application/json");
+    ngx_chain_t                *out = NULL, *tmp;
+    ngx_int_t                   rc;
+    ngx_http_variable_value_t   upstream;
+    off_t                       content_length = 0;
+
+    if (r->method != NGX_HTTP_GET)
+        return NGX_HTTP_NOT_ALLOWED;
+
+    if ((rc = ngx_http_discard_request_body(r)) != NGX_OK)
+        return rc;
+
+    upstream.not_found = 1;
+
+    out = ngx_http_dynamic_healthcheck_status
+            <ngx_stream_upstream_main_conf_t,
+             ngx_stream_upstream_srv_conf_t,
+             ngx_stream_upstream_rr_peers_t,
+             ngx_stream_upstream_rr_peer_t>(r, &upstream);
+
+    if (out == NULL)
+        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+
+    for (tmp = out; tmp; tmp = tmp->next)
+        content_length += (tmp->buf->last - tmp->buf->start);
+
+    if (content_length != 0) {
+        r->headers_out.status = NGX_HTTP_OK;
+        r->headers_out.content_type = json;
+        r->headers_out.content_length_n = content_length;
+    } else {
+        r->headers_out.status = NGX_HTTP_NOT_FOUND;
+        out->buf->last = ngx_snprintf(out->buf->last,
+                                      out->buf->end - out->buf->last,
+                                      "not found");
+        r->headers_out.content_length_n = 9;
+    }
+
+    rc = ngx_http_send_header(r);
+
+    if (rc == NGX_ERROR || rc > NGX_OK)
+        return rc;
+
+    return ngx_http_output_filter(r, out);
+}
 
 static char *
 ngx_http_dynamic_healthcheck_get(ngx_conf_t *cf,
