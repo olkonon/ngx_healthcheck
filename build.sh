@@ -4,6 +4,9 @@ DIR="$(pwd)"
 
 NGINX_VERSION="1.27.3"
 
+
+mkdir -p build/
+
 wget "https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz"
 ls -la
 

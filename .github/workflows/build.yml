@@ -7,12 +7,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          sparse-checkout: 'build/modules/ngx_healthcheck/'
-          sparse-checkout-cone-mode: false
       - name: Install environment
         run: 'sudo apt install -y libpcre2-dev zlib1g-dev wget'
       - name: Build
-        run: 'build/modules/ngx_healthcheck/build.sh'
+        run: './build.sh'
       - name: List files in the repository
         run: |
           ls ${{ github.workspace }}
