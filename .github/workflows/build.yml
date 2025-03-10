@@ -10,7 +10,4 @@ jobs:
         run: 'sudo apt install -y libpcre2-dev zlib1g-dev wget'
       - name: Build
         run: './build.sh'
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
       - run: echo "This job's status is ${{ job.status }}."
