@@ -18,5 +18,5 @@ cd $DIR/buildnginx
 ls -la ./
 ls -la ./modules/
 ls -la ./modules/ngx_healthcheck/
-./conifure --with-pcre --with-http_ssl_module --add-module=./modules/ngx_healthcheck/
+./configure --with-pcre --with-http_ssl_module --add-module=./modules/ngx_healthcheck/
 make -j8
