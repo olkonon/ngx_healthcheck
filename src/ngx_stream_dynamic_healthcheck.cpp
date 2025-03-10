@@ -134,7 +134,7 @@ ngx_stream_dynamic_healthcheck_create_conf(ngx_conf_t *cf);
 
 static ngx_stream_module_t ngx_stream_dynamic_healthcheck_ctx = {
     NULL,                                            /* preconfiguration  */
-    ngx_stream_dynamic_healthcheck_post_conf,        /* postconfiguration */
+    NULL,        /* postconfiguration */
     ngx_stream_dynamic_healthcheck_create_conf,      /* create main       */
     ngx_stream_dynamic_healthcheck_init_main_conf,   /* init main         */
     ngx_stream_dynamic_healthcheck_create_conf,      /* create server     */
