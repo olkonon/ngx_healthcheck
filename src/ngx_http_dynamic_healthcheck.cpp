@@ -6,6 +6,7 @@
 #include "ngx_dynamic_healthcheck_config.h"
 #include "ngx_dynamic_healthcheck_api.h"
 #include "ngx_dynamic_healthcheck_state.h"
+#include "ngx_http_dynamic_healthcheck.h"
 
 
 static char *
