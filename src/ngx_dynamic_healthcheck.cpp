@@ -12,7 +12,7 @@ extern "C" {
 #include "ngx_dynamic_healthcheck_state.h"
 #include "ngx_dynamic_healthcheck_tcp.h"
 #include "ngx_dynamic_healthcheck_http.h"
-#include "ngx_dynamic_healthcheck_ssl.h"
+#include "ngx_dynamic_healthcheck_https.h"
 
 
 static void
@@ -150,9 +150,9 @@ do_check_private(S *uscf, ngx_dynamic_healthcheck_event_t *event)
                                                                       PeerT>),
                                   event->log);
 
-            else if (type.len == 3 && ngx_memcmp(type.data, "ssl", 3) == 0)
+            else if (type.len == 3 && ngx_memcmp(type.data, "https", 3) == 0)
 
-                addr = ngx_calloc(sizeof(ngx_dynamic_healthcheck_ssl<PeersT,
+                addr = ngx_calloc(sizeof(ngx_dynamic_healthcheck_https<PeersT,
                                                                      PeerT>),
                                   event->log);
             else
@@ -173,10 +173,10 @@ do_check_private(S *uscf, ngx_dynamic_healthcheck_event_t *event)
                     ngx_dynamic_healthcheck_http<PeersT, PeerT>(primary, event,
                         state);
 
-            else if (type.len == 3 && ngx_memcmp(type.data, "ssl", 3) == 0)
+            else if (type.len == 3 && ngx_memcmp(type.data, "https", 3) == 0)
 
                 p = new (addr)
-                    ngx_dynamic_healthcheck_ssl<PeersT, PeerT>(primary, event,
+                    ngx_dynamic_healthcheck_https<PeersT, PeerT>(primary, event,
                         state);
 
             else

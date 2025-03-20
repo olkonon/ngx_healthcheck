@@ -12,6 +12,7 @@ HTTP_DYNAMIC_HC_SRCS="                                    \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_http.cpp   \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_api.cpp    \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_config.cpp \
+    $ngx_addon_dir/src/ngx_dynamic_healthcheck_https.cpp  \
     $ngx_addon_dir/src/ngx_http_dynamic_healthcheck.cpp   \
     $ngx_addon_dir/src/ngx_stream_dynamic_healthcheck.cpp \
     $ngx_addon_dir/src/ngx_dynamic_shm.c                  \
@@ -23,7 +24,7 @@ HTTP_DYNAMIC_HC_DEPS="                                      \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_state.h      \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_peer.h       \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_tcp.h        \
-    $ngx_addon_dir/src/ngx_dynamic_healthcheck_ssl.h        \
+    $ngx_addon_dir/src/ngx_dynamic_healthcheck_https.h       \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_http.h       \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_api.h        \
     $ngx_addon_dir/src/ngx_dynamic_healthcheck_config.h     \
