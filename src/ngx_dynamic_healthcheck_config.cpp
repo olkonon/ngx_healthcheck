@@ -47,6 +47,11 @@ ngx_dynamic_healthcheck_check(ngx_conf_t *cf, ngx_command_t *cmd,
                 goto fail;
 
             conf->config.type = type;
+            if ((type.len==5)&&(ngx_strncmp("https", type.data, 5) == 0)) {
+                conf->config.ssl = 1;
+            } else {
+                conf->config.ssl = 0;
+            }
 
             continue;
         }
