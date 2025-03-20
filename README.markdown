@@ -9,7 +9,7 @@ ngx-dynamic-healthcheck - Nginx upstreams healthchecks.
 
 Module requires [zone](https://nginx.org/en/docs/http/ngx_http_upstream_module.html#zone) upstream directive.
 
-* support http, tcp, ssl checks.
+* support http, tcp, https checks.
 * support dynamic reconfiguration
 * support persistance of healthcheck parameters
 * with [dynamic-upstream-module](https://github.com/ZigzagAK/ngx_dynamic_upstream) automaticaly cover by healthchecks new added peers (with DNS balancing).
@@ -113,7 +113,7 @@ http {
 
       server mail.ru:443 down;
 
-      check fall=2 rise=2 interval=10 timeout=10000 type=ssl;
+      check fall=2 rise=2 interval=10 timeout=10000 type=https;
   }
 
   upstream google {
@@ -189,7 +189,7 @@ Individual upstream parameters
 
 check
 -----
-* **syntax**: `check fall=2 rise=2 timeout=1000 interval=10 keepalive=10 type=http|tcp|ssl port=<other check port> <passive>`
+* **syntax**: `check fall=2 rise=2 timeout=1000 interval=10 keepalive=10 type=http|tcp|https port=<other check port> <passive>`
 * **default**: `none`
 * **context**: `upstream`
 
@@ -285,7 +285,7 @@ Global healthcheck parameters
 
 healthcheck
 ----------
-* **syntax**: `healthcheck fall=2 rise=2 timeout=1000 interval=10 keepalive=10 type=http|tcp|ssl`
+* **syntax**: `healthcheck fall=2 rise=2 timeout=1000 interval=10 keepalive=10 type=http|tcp|https`
 * **default**: `none`
 * **context**: `http`
 
@@ -539,7 +539,7 @@ Arguments:
 ```
 - stream=
 - upstream=xxx
-- type=http|tcp|ssl
+- type=http|tcp|https
 - fall=N
 - rise=N
 - timeout=ms

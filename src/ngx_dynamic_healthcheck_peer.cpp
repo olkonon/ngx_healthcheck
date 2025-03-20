@@ -515,6 +515,12 @@ ngx_dynamic_healthcheck_peer::connect()
         close();
     }
 
+    if (opts->ssl) {
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                 "[%V] %V: %V addr=%V, SSL connect(),",
+                 &module, &upstream, &server, &name);
+    }
+
     ngx_memzero(&state.local->pc, sizeof(ngx_peer_connection_t));
 
     state.local->pc.sockaddr = state.local->sockaddr;
@@ -531,10 +537,10 @@ ngx_dynamic_healthcheck_peer::connect()
 
     c = state.local->pc.connection;
 
-    ngx_log_debug5(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                   "[%V] %V: %V addr=%V, fd=%d connect()",
+    ngx_log_debug6(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                   "[%V] %V: %V addr=%V, fd=%d ssl=%d connect()",
                    &module, &upstream, &server, &name,
-                   c->fd);
+                   c->fd,opts->ssl);
 
 connected:
 

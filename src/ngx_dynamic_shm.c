@@ -346,6 +346,8 @@ ngx_init_shm_zone(ngx_shm_zone_t *zone, void *old)
     if (!(sh->flags & NGX_DYNAMIC_UPDATE_OPT_PASSIVE))
         sh->passive = opts->passive;
 
+    sh->ssl = opts->ssl;
+
     if (!(sh->flags & NGX_DYNAMIC_UPDATE_OPT_TYPE))
         b = b && NGX_OK == ngx_shm_str_copy(&sh->type, &opts->type, slab);
     if (!(sh->flags & NGX_DYNAMIC_UPDATE_OPT_URI))

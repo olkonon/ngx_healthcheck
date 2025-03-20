@@ -71,6 +71,7 @@ struct ngx_dynamic_healthcheck_opts_s {
     ngx_int_t                timeout;
     ngx_int_t                interval;
     ngx_uint_t               keepalive;
+    ngx_flag_t               ssl;
     ngx_str_t                request_uri;
     ngx_str_t                request_method;
     ngx_keyval_array_t       request_headers;
