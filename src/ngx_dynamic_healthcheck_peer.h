@@ -60,6 +60,12 @@ private:
     handle_dummy(ngx_event_t *ev);
 
     ngx_int_t
+    init_ssl_context(ngx_ssl_t *ssl);
+
+    static void
+    ssl_handshake_handler(ngx_connection_t  *c);
+
+    ngx_int_t
     handle_io(ngx_event_t *ev);
 
     void
@@ -79,6 +85,9 @@ private:
 
     void
     set_keepalive();
+
+    void
+    ssl_connect();
 
     void
     connect();
