@@ -407,7 +407,9 @@ ngx_http_dynamic_healthcheck_init_srv_conf(ngx_conf_t *cf,
         main_conf->config.persistent);
 
     if (conf->config.type.data != NULL
-        && ngx_strncmp(conf->config.type.data, "http", 4) == 0)
+        &&
+        ((ngx_strncmp(conf->config.type.data, "http", 4) == 0)||(ngx_strncmp(conf->config.type.data, "http", 5) == 0))
+        )
         if (conf->config.request_uri.len == 0) {
             ngx_str_null(&conf->config.request_method);
             ngx_memzero(&conf->config.request_headers,
@@ -603,7 +605,7 @@ static ngx_chain_t *
 ngx_http_dynamic_healthcheck_get_hc(ngx_http_request_t *r,
     ngx_dynamic_healthcheck_opts_t *shared, ngx_str_t tab)
 {
-    ngx_flag_t   is_http = ngx_strncmp(shared->type.data, "http", 4) == 0;
+    ngx_flag_t   is_http = (ngx_strncmp(shared->type.data, "http", 4) == 0)||(ngx_strncmp(shared->type.data, "https", 5) == 0);
     ngx_chain_t *out = (ngx_chain_t *) ngx_pcalloc(r->pool,
                                                    sizeof(ngx_chain_t));
     ngx_str_array_t disabled[2] = {
