@@ -32,7 +32,7 @@ private:
         st_done
     } ngx_check_state_t;
     ngx_check_state_t                 check_state;
-    
+
 protected:
 
     ngx_str_t         name;
@@ -88,6 +88,9 @@ private:
 
     void
     ssl_connect();
+
+    void
+    plaintext_connect();
 
     void
     connect();

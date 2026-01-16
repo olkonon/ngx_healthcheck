@@ -322,7 +322,7 @@ ngx_dynamic_healthcheck_peer::handle_read(ngx_event_t *ev)
     ngx_int_t                     rc;
 
     c->log->action = (char *) "receiving response";
-    
+
     if (ngx_stopping()) {
         ngx_log_debug5(NGX_LOG_DEBUG_HTTP, c->log, 0,
                        "[%V] %V: %V addr=%V, fd=%d worker stopping, close",
@@ -496,34 +496,43 @@ ngx_int_t
 ngx_dynamic_healthcheck_peer::init_ssl_context(ngx_ssl_t *ssl) {
     // set SSL Context
     ngx_log_t *log = ngx_cycle->log;
+    ssl = ngx_pcalloc(state.local->pool,sizeof(ngx_ssl_t))
+    if (ssl== NULL) {
+            ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
+                "[%V] %V: %V addr=%V, SSL context memory allocate error, nomem",
+                &module, &upstream, &server, &name);
+            return NGX_ERROR;
+    }
 
     if (ngx_ssl_create(ssl,NGX_SSL_TLSv1 | NGX_SSL_TLSv1_1 | NGX_SSL_TLSv1_2, log) != NGX_OK) {
-        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,"[%V] %V: %V addr=%V, SSL ngx_ssl_create failed",&module, &upstream, &server, &name);
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
+            "[%V] %V: %V addr=%V, SSL ngx_ssl_create failed",
+            &module, &upstream, &server, &name);
         return NGX_ERROR;
     }
 
     if (ssl->ctx == NULL) {
-        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,"[%V] %V: %V addr=%V, ssl->ctx is NULL", &module, &upstream, &server, &name);
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
+            "[%V] %V: %V addr=%V, ssl->ctx is NULL",
+            &module, &upstream, &server, &name);
         return NGX_ERROR;
     }
 
     if (SSL_CTX_set_cipher_list(ssl->ctx, "HIGH:!aNULL:!MD5") == 0) {
-                 ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
-                 "[%V] %V: %V addr=%V, SSL_CTX_set_cipher_list() failed",
-                 &module, &upstream, &server, &name);
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
+            "[%V] %V: %V addr=%V, SSL_CTX_set_cipher_list() failed",
+            &module, &upstream, &server, &name);
         return NGX_ERROR;
     }
 
     SSL_CTX_set_verify(ssl->ctx, SSL_VERIFY_NONE, NULL);
-    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
-                 "[%V] %V: %V addr=%V, ssl->ctx set SSL_VERIFY_NONE",
-                 &module, &upstream, &server, &name);
-
-
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
+            "[%V] %V: %V addr=%V, ssl->ctx set SSL_VERIFY_NONE",
+             &module, &upstream, &server, &name);
 
     ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
-                 "[%V] %V: %V addr=%V, SSL_CTX_set_cipher_list() ssl_init success",
-                 &module, &upstream, &server, &name);
+        "[%V] %V: %V addr=%V, SSL_CTX_set_cipher_list() ssl_init success",
+        &module, &upstream, &server, &name);
 
     return NGX_OK;
 }
@@ -549,135 +558,21 @@ ngx_dynamic_healthcheck_peer::ssl_handshake_handler(ngx_connection_t  *c)
 }
 
 
+
+
 void
-ngx_dynamic_healthcheck_peer::ssl_connect()
-{
-    ngx_int_t           rc;
-    ngx_connection_t   *c;
-    ngx_ssl_t           ssl_context;
+ngx_dynamic_healthcheck_peer::connect() {
+    if (opts->ssl)
+        return ssl_connect();
 
-    if (state.local->pc.connection != NULL) {
-        c = state.local->pc.connection;
-        if (c->ssl->handshaked) {
-            ngx_log_debug5(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                           "[%V] %V: %V addr=%V, fd=%d connect(),"
-                           " reuse connection",
-                           &module, &upstream, &server, &name,
-                           c->fd);
-            goto connected;
-        }
-        close();
-    }
-
-
-    // Init ssl context
-    if (init_ssl_context(&ssl_context) != NGX_OK) {
-        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, init_ssl_context error",
-                 &module, &upstream, &server, &name);
-
-        return fail();
-    }
-
-    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, init_ssl_context success!",
-                 &module, &upstream, &server, &name);
-
-    //Create TCP connection
-    state.local->pc.sockaddr = state.local->sockaddr;
-    state.local->pc.socklen = state.local->socklen;
-    state.local->pc.name = &state.local->name;
-    state.local->pc.get = ngx_event_get_peer;
-    state.local->pc.log = ngx_cycle->log;
-    state.local->pc.log_error = NGX_ERROR_ERR;
-
-    rc = ngx_event_connect_peer(&state.local->pc);
-    if (rc != NGX_OK && rc != NGX_AGAIN) {
-              ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, ngx_event_connect_peer error",
-                 &module, &upstream, &server, &name);
-        return fail();
-    }
-
-    c = state.local->pc.connection;
-    c->pool = state.local->pool;
-    c->log = ngx_cycle->log;
-    c->sendfile = 0;
-    c->read->log = ngx_cycle->log;
-    c->write->log = ngx_cycle->log;
-    c->data = this;
-
-    ngx_log_debug6(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                   "[%V] %V: %V addr=%V, fd=%d ssl=%d ngx_event_connect_peer success",
-                   &module, &upstream, &server, &name,
-                   c->fd,opts->ssl);
-
-    // Create SSL connection ovee TCP
-    if (ngx_ssl_create_connection(&ssl_context, c, NGX_SSL_CLIENT|NGX_SSL_BUFFER) != NGX_OK) {
-        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, ngx_ssl_create_connection error",
-                 &module, &upstream, &server, &name);
-        return fail();
-    }
-
-    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, ngx_ssl_create_connection success",
-                 &module, &upstream, &server, &name);
-
-    //Handshaking
-    rc = ngx_ssl_handshake(c);
-    if (rc == NGX_AGAIN) {
-        if (!c->write->timer_set) {
-            ngx_add_timer(c->write, opts->timeout);
-        }
-        if (!c->read->timer_set) {
-            ngx_add_timer(c->read, opts->timeout);
-        }
-
-        c->ssl->handler = ngx_dynamic_healthcheck_peer::ssl_handshake_handler;
-        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, Start handshaking",
-                 &module, &upstream, &server, &name);
-        check_state = st_connecting;
-        return;
-    }
-
-    if (rc != NGX_OK) {
-              ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, SSL handshake errot",
-                 &module, &upstream, &server, &name);
-              return fail();
-    }
-
-    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, SSL handshake completed success",
-                 &module, &upstream, &server, &name);
-    /* NGX_OK */
-    connected:
-        c->pool = state.local->pool;
-        c->log = ngx_cycle->log;
-        c->sendfile = 0;
-        c->read->log = ngx_cycle->log;
-        c->write->log = ngx_cycle->log;
-        c->data = this;
-
-        check_state = st_connected;
-        c->write->handler = &ngx_dynamic_healthcheck_peer::handle_write;
-        c->read->handler = &ngx_dynamic_healthcheck_peer::handle_dummy;
-        ngx_add_timer(c->write, opts->timeout);
-        ngx_dynamic_healthcheck_peer::handle_write(c->write);
-        return;
+    return plaintext_connect();
 }
 
 void
-ngx_dynamic_healthcheck_peer::connect()
+ngx_dynamic_healthcheck_peer::plaintext_connect()
 {
     ngx_int_t          rc;
     ngx_connection_t  *c;
-
-    if (opts->ssl) {
-        return ssl_connect();
-    }
 
     if (state.local->pc.connection != NULL) {
         c = state.local->pc.connection;
@@ -752,6 +647,124 @@ connected:
     ngx_add_timer(c->write, opts->timeout);
 }
 
+void
+ngx_dynamic_healthcheck_peer::ssl_connect()
+{
+    ngx_int_t           rc;
+    ngx_connection_t   *c;
+    ngx_ssl_t           *ssl_context;
+
+    if (state.local->pc.connection != NULL) {
+        c = state.local->pc.connection;
+        if (c->ssl->handshaked) {
+            ngx_log_debug5(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                           "[%V] %V: %V addr=%V, fd=%d connect(),"
+                           " reuse connection",
+                           &module, &upstream, &server, &name,
+                           c->fd);
+            goto connected;
+        }
+        close();
+    }
+
+    // Init ssl context
+    if (init_ssl_context(ssl_context) != NGX_OK) {
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                 "[%V] %V: %V addr=%V, init_ssl_context error",
+                 &module, &upstream, &server, &name);
+
+        return fail();
+    }
+
+    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                 "[%V] %V: %V addr=%V, init_ssl_context success!",
+                 &module, &upstream, &server, &name);
+
+    //Create TCP connection
+    state.local->pc.sockaddr = state.local->sockaddr;
+    state.local->pc.socklen = state.local->socklen;
+    state.local->pc.name = &state.local->name;
+    state.local->pc.get = ngx_event_get_peer;
+    state.local->pc.log = ngx_cycle->log;
+    state.local->pc.log_error = NGX_ERROR_ERR;
+
+    rc = ngx_event_connect_peer(&state.local->pc);
+    if (rc != NGX_OK && rc != NGX_AGAIN) {
+              ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                 "[%V] %V: %V addr=%V, ngx_event_connect_peer error",
+                 &module, &upstream, &server, &name);
+        return fail();
+    }
+
+    c = state.local->pc.connection;
+    c->pool = state.local->pool;
+    c->log = ngx_cycle->log;
+    c->sendfile = 0;
+    c->read->log = ngx_cycle->log;
+    c->write->log = ngx_cycle->log;
+    c->data = this;
+
+    ngx_log_debug6(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                   "[%V] %V: %V addr=%V, fd=%d ssl=%d ngx_event_connect_peer success",
+                   &module, &upstream, &server, &name,
+                   c->fd,opts->ssl);
+
+    // Create SSL connection ovee TCP
+    if (ngx_ssl_create_connection(ssl_context, c, NGX_SSL_CLIENT|NGX_SSL_BUFFER) != NGX_OK) {
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                 "[%V] %V: %V addr=%V, ngx_ssl_create_connection error",
+                 &module, &upstream, &server, &name);
+        return fail();
+    }
+
+    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                 "[%V] %V: %V addr=%V, ngx_ssl_create_connection success",
+                 &module, &upstream, &server, &name);
+
+    //Handshaking
+    rc = ngx_ssl_handshake(c);
+    if (rc == NGX_AGAIN) {
+        if (!c->write->timer_set) {
+            ngx_add_timer(c->write, opts->timeout);
+        }
+        if (!c->read->timer_set) {
+            ngx_add_timer(c->read, opts->timeout);
+        }
+
+        c->ssl->handler = ngx_dynamic_healthcheck_peer::ssl_handshake_handler;
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                 "[%V] %V: %V addr=%V, Start handshaking",
+                 &module, &upstream, &server, &name);
+        check_state = st_connecting;
+        return;
+    }
+
+    if (rc != NGX_OK) {
+              ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                 "[%V] %V: %V addr=%V, SSL handshake errot",
+                 &module, &upstream, &server, &name);
+              return fail();
+    }
+
+    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                 "[%V] %V: %V addr=%V, SSL handshake completed success",
+                 &module, &upstream, &server, &name);
+    /* NGX_OK */
+    connected:
+        c->pool = state.local->pool;
+        c->log = ngx_cycle->log;
+        c->sendfile = 0;
+        c->read->log = ngx_cycle->log;
+        c->write->log = ngx_cycle->log;
+        c->data = this;
+
+        check_state = st_connected;
+        c->write->handler = &ngx_dynamic_healthcheck_peer::handle_write;
+        c->read->handler = &ngx_dynamic_healthcheck_peer::handle_dummy;
+        ngx_add_timer(c->write, opts->timeout);
+        ngx_dynamic_healthcheck_peer::handle_write(c->write);
+        return;
+}
 
 void
 ngx_dynamic_healthcheck_peer::completed()
