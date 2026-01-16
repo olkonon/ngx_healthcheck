@@ -176,6 +176,10 @@ ngx_dynamic_healthcheck_peer::handle_idle(ngx_event_t *ev)
     return;
 
 close:
+    if (c->ssl) {
+        c->ssl->no_wait_shutdown = 1;
+        (void) ngx_ssl_shutdown(c);
+    }
 
     ngx_close_connection(c);
     ngx_memzero(&state->pc, sizeof(ngx_peer_connection_t));
@@ -442,14 +446,28 @@ ngx_dynamic_healthcheck_peer::close()
 {
     ngx_connection_t  *c = state.local->pc.connection;
 
-    if (c != NULL) {
+    ngx_log_debug5(NGX_LOG_DEBUG_HTTP, c->log, 0,
+        "[%V] %V: %V addr=%V, fd=%d close()",
+        &module, &upstream, &server, &name, c->fd);
+
+    if (c) {
+        if (c->ssl) {
+            ngx_log_debug5(NGX_LOG_DEBUG_HTTP, c->log, 0,
+                "[%V] %V: %V addr=%V, fd=%d ngx_ssl_shutdown()",
+                &module, &upstream, &server, &name, c->fd);
+
+            c->ssl->no_wait_shutdown = 1;
+            (void) ngx_ssl_shutdown(c);
+        }
+
         ngx_log_debug5(NGX_LOG_DEBUG_HTTP, c->log, 0,
-                       "[%V] %V: %V addr=%V, fd=%d close()",
-                       &module, &upstream, &server, &name, c->fd);
+            "[%V] %V: %V addr=%V, fd=%d  ngx_close_connection()",
+            &module, &upstream, &server, &name, c->fd);
         ngx_close_connection(c);
     }
 
     ngx_memzero(&state.local->pc, sizeof(ngx_peer_connection_t));
+
 }
 
 
@@ -487,42 +505,42 @@ ngx_dynamic_healthcheck_peer::set_keepalive()
     return ngx_add_timer(c->write, 1000);
 
 close:
-
     close();
 }
 
 
-ngx_int_t
-ngx_dynamic_healthcheck_peer::init_ssl_context(ngx_ssl_t *ssl) {
+ngx_ssl_t *
+ngx_dynamic_healthcheck_peer::get_ssl_context() {
+    ngx_ssl_t *ssl;
     // set SSL Context
     ngx_log_t *log = ngx_cycle->log;
-    ssl = ngx_pcalloc(state.local->pool,sizeof(ngx_ssl_t))
-    if (ssl== NULL) {
+    ssl = (ngx_ssl_t *) ngx_pcalloc(state.local->pool,sizeof(ngx_ssl_t));
+    if (ssl == NULL) {
             ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
                 "[%V] %V: %V addr=%V, SSL context memory allocate error, nomem",
                 &module, &upstream, &server, &name);
-            return NGX_ERROR;
+            return NULL;
     }
 
     if (ngx_ssl_create(ssl,NGX_SSL_TLSv1 | NGX_SSL_TLSv1_1 | NGX_SSL_TLSv1_2, log) != NGX_OK) {
         ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
             "[%V] %V: %V addr=%V, SSL ngx_ssl_create failed",
             &module, &upstream, &server, &name);
-        return NGX_ERROR;
+        return NULL;
     }
 
     if (ssl->ctx == NULL) {
         ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
             "[%V] %V: %V addr=%V, ssl->ctx is NULL",
             &module, &upstream, &server, &name);
-        return NGX_ERROR;
+        return NULL;
     }
 
     if (SSL_CTX_set_cipher_list(ssl->ctx, "HIGH:!aNULL:!MD5") == 0) {
         ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
             "[%V] %V: %V addr=%V, SSL_CTX_set_cipher_list() failed",
             &module, &upstream, &server, &name);
-        return NGX_ERROR;
+        return NULL;
     }
 
     SSL_CTX_set_verify(ssl->ctx, SSL_VERIFY_NONE, NULL);
@@ -534,7 +552,7 @@ ngx_dynamic_healthcheck_peer::init_ssl_context(ngx_ssl_t *ssl) {
         "[%V] %V: %V addr=%V, SSL_CTX_set_cipher_list() ssl_init success",
         &module, &upstream, &server, &name);
 
-    return NGX_OK;
+    return ssl;
 }
 
 void
@@ -668,9 +686,10 @@ ngx_dynamic_healthcheck_peer::ssl_connect()
     }
 
     // Init ssl context
-    if (init_ssl_context(ssl_context) != NGX_OK) {
+    ssl_context = get_ssl_context();
+    if (ssl_context == NULL) {
         ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, init_ssl_context error",
+                 "[%V] %V: %V addr=%V, get_ssl_context() error",
                  &module, &upstream, &server, &name);
 
         return fail();

@@ -59,8 +59,8 @@ private:
     static void
     handle_dummy(ngx_event_t *ev);
 
-    ngx_int_t
-    init_ssl_context(ngx_ssl_t *ssl);
+    ngx_ssl_t *
+    get_ssl_context();
 
     static void
     ssl_handshake_handler(ngx_connection_t  *c);
