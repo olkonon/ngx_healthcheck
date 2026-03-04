@@ -218,7 +218,7 @@ ngx_module_t ngx_http_dynamic_healthcheck_module = {
 };
 
 
-ngx_str_t NGX_DH_MODULE_HTTP = ngx_string("http");
+ngx_str_t NGX_DH_MODULE_HTTP = ngx_string("http-dynamic-healthcheck");
 
 
 // initialization
@@ -527,7 +527,7 @@ serialize_num_array(ngx_pool_t *pool, ngx_num_array_t *a)
 
     s->data = tmp->start;
     s->len = tmp->last - tmp->start;
-    
+
     return s;
 }
 
@@ -719,7 +719,7 @@ ngx_http_dynamic_healthcheck_get(ngx_http_request_t *r,
     start = out = (ngx_chain_t *) ngx_pcalloc(r->pool, sizeof(ngx_chain_t));
     if (start == NULL)
         return NULL;
-    
+
     start->buf = ngx_create_temp_buf(r->pool, ngx_pagesize);
     if (start->buf == NULL)
         return NULL;
@@ -737,7 +737,7 @@ ngx_http_dynamic_healthcheck_get(ngx_http_request_t *r,
                                       "{" CRLF);
         tab = with_tab;
     }
- 
+
     for (i = 0; i < umcf->upstreams.nelts; i++) {
 
         if (uscf[i]->shm_zone == NULL)
@@ -749,7 +749,7 @@ ngx_http_dynamic_healthcheck_get(ngx_http_request_t *r,
 
         if (conf->shared == NULL)
             continue;
-        
+
         if (conf->shared->type.len == 0)
             continue;
 
@@ -1145,11 +1145,11 @@ ngx_http_dynamic_healthcheck_status_hc(ngx_http_request_t *r,
     ngx_uint_t              i;
     ngx_dynamic_hc_stat_t   stat;
     ngx_chain_t            *out;
-    
+
     out = (ngx_chain_t *) ngx_pcalloc(r->pool, sizeof(ngx_chain_t));
     if (out == NULL)
         return NULL;
-    
+
     out->buf = ngx_create_temp_buf(r->pool, ngx_pagesize);
     if (out->buf == NULL)
         return NULL;
