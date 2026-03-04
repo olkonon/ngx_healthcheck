@@ -512,6 +512,7 @@ close:
 ngx_ssl_t *
 ngx_dynamic_healthcheck_peer::get_ssl_context() {
     ngx_ssl_t *ssl;
+    ngx_pool_cleanup_t  *cleanup_ssl_ctx;
     // set SSL Context
     ngx_log_t *log = ngx_cycle->log;
     ssl = (ngx_ssl_t *) ngx_pcalloc(state.local->pool,sizeof(ngx_ssl_t));
@@ -528,6 +529,15 @@ ngx_dynamic_healthcheck_peer::get_ssl_context() {
             &module, &upstream, &server, &name);
         return NULL;
     }
+
+    // Pool cleanup handler
+    cleanup_ssl_ctx = ngx_pool_cleanup_add(state.local->pool, 0);
+    if (cleanup_ssl_ctx == NULL) {
+        return NULL;
+    }
+
+    cleanup_ssl_ctx->handler = ngx_ssl_cleanup_ctx;
+    cleanup_ssl_ctx->data = ssl;
 
     if (ssl->ctx == NULL) {
         ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
@@ -735,6 +745,7 @@ ngx_dynamic_healthcheck_peer::ssl_connect()
                  &module, &upstream, &server, &name);
         return fail();
     }
+
 
     ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
                  "[%V] %V: %V addr=%V, ngx_ssl_create_connection success",
