@@ -558,6 +558,11 @@ ngx_dynamic_healthcheck_peer::get_ssl_context() {
             "[%V] %V: %V addr=%V, ssl->ctx set SSL_VERIFY_NONE",
              &module, &upstream, &server, &name);
 
+     SSL_CTX_set_options(ssl->ctx, SSL_OP_IGNORE_UNEXPECTED_EOF);
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
+            "[%V] %V: %V addr=%V, ssl->ctx set SSL_OP_IGNORE_UNEXPECTED_EOF",
+            &module, &upstream, &server, &name);
+
     ngx_log_debug4(NGX_LOG_DEBUG_HTTP, log, 0,
         "[%V] %V: %V addr=%V, SSL_CTX_set_cipher_list() ssl_init success",
         &module, &upstream, &server, &name);
@@ -574,8 +579,8 @@ ngx_dynamic_healthcheck_peer::ssl_handshake_handler(ngx_connection_t  *c)
         ngx_log_debug5(NGX_LOG_DEBUG_HTTP, c->log, 0,
                  "[%V] %V: %V addr=%V,[ssl_handshake_handler] SSL handshake fail c->ssl->handshaked=%d",
                  &peer->module, &peer->upstream, &peer->server, &peer->name,c->ssl->handshaked);
-        peer->close();
-        return;
+
+        return peer->fail();
     }
 
     ngx_log_debug4(NGX_LOG_DEBUG_HTTP, c->log, 0,
@@ -718,13 +723,12 @@ ngx_dynamic_healthcheck_peer::ssl_connect()
     state.local->pc.log_error = NGX_ERROR_ERR;
 
     rc = ngx_event_connect_peer(&state.local->pc);
-    if (rc != NGX_OK && rc != NGX_AGAIN) {
-              ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
-                 "[%V] %V: %V addr=%V, ngx_event_connect_peer error",
-                 &module, &upstream, &server, &name);
+    if (rc == NGX_ERROR || rc == NGX_DECLINED || rc == NGX_BUSY) {
+        ngx_log_debug4(NGX_LOG_DEBUG_HTTP, event->log, 0,
+                       "[%V] %V: %V addr=%V, ngx_event_connect_peer error",
+                       &module, &upstream, &server, &name);
         return fail();
     }
-
     c = state.local->pc.connection;
     c->pool = state.local->pool;
     c->log = ngx_cycle->log;
